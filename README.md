@@ -1,6 +1,8 @@
 Java Etherpad Lite Client
 =========================
 
+[![Coverage Status](https://coveralls.io/repos/github/branlopezp/java-etherpad-lite/badge.svg?branch=master)](https://coveralls.io/github/branlopezp/java-etherpad-lite?branch=master)
+
 A Java client for Etherpad Lite’s HTTP JSON API.
 Etherpad Lite is a collaborative editor provided by the Etherpad Foundation.
 
