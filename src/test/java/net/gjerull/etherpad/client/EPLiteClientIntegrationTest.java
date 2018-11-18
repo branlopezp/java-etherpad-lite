@@ -732,37 +732,77 @@ public class EPLiteClientIntegrationTest {
 		 assertTrue(padIDs.contains(pad2));
 	}
 
-    // @Test
-    // public void create_pad_and_chat_about_it() {
-    //     String padID = "integration-test-pad-1";
-    //     String user1 = "user1";
-    //     String user2 = "user2";
-    //     Map response = client.createAuthorIfNotExistsFor(user1, "integration-author-1");
-    //     String author1Id = (String) response.get("authorID");
-    //     response = client.createAuthorIfNotExistsFor(user2, "integration-author-2");
-    //     String author2Id = (String) response.get("authorID");
+     @Test
+     public void create_pad_and_chat_about_it() {
+	 String padID = "integration-test-pad-1";
+		String user1 = "user1";
+		String user2 = "user2";
 
-    //     client.createPad(padID);
-    //     try {
-    //         client.appendChatMessage(padID, "hi from user1", author1Id);
-    //         client.appendChatMessage(padID, "hi from user2", author2Id, System.currentTimeMillis() / 1000L);
-    //         client.appendChatMessage(padID, "gå å gjør et ærend", author1Id, System.currentTimeMillis() / 1000L);
-    //         response = client.getChatHead(padID);
-    //         long chatHead = (long) response.get("chatHead");
-    //         assertEquals(2, chatHead);
+		mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createAuthorIfNotExistsFor"))
+			.respond(HttpResponse.response().withStatusCode(200)
+			.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.s8oes9dhwrvt0zif\"}}"));
 
-    //         response = client.getChatHistory(padID);
-    //         List chatHistory = (List) response.get("messages");
-    //         assertEquals(3, chatHistory.size());
-    //         assertEquals("gå å gjør et ærend", ((Map)chatHistory.get(2)).get("text"));
+		Map response = client.createAuthorIfNotExistsFor(user1,"integration-author-1");		
+		String author1Id = (String) response.get("authorID");
 
-    //         response = client.getChatHistory(padID, 0, 1);
-    //         chatHistory = (List) response.get("messages");
-    //         assertEquals(2, chatHistory.size());
-    //         assertEquals("hi from user2", ((Map)chatHistory.get(1)).get("text"));
-    //     } finally {
-    //         client.deletePad(padID);
-    //     }
+		mockServer.clear(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createAuthorIfNotExistsFor"));
 
-    // }
+		mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createAuthorIfNotExistsFor"))
+			.respond(HttpResponse.response().withStatusCode(200)
+			.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.s8oes9dhwrvt0z02\"}}"));
+
+		response = client.createAuthorIfNotExistsFor(user2, "integration-author-2");
+		String author2Id = (String) response.get("authorID");
+
+		mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createPad")).respond(
+			HttpResponse.response().withStatusCode(200).withBody("{\"code\":0,\"message\":\"ok\",\"data\":null}"));
+
+		client.createPad(padID);
+
+		try {
+
+			mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/appendChatMessage"))
+				.respond(HttpResponse.response().withStatusCode(200)
+				.withBody("{\"code\":0,\"message\":\"ok\",\"data\":null}"));
+	
+			client.appendChatMessage(padID, "hi from user1", author1Id);
+			client.appendChatMessage(padID, "hi from user2", author2Id,System.currentTimeMillis() / 1000L);
+			client.appendChatMessage(padID, "bye from user1", author1Id,System.currentTimeMillis() / 1000L);
+
+			mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHead"))
+				.respond(HttpResponse.response().withStatusCode(200)
+				.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"chatHead\":2}}"));
+	
+			response = client.getChatHead(padID);
+			long chatHead = (long) response.get("chatHead");
+			assertEquals(2, chatHead);
+
+			mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHistory"))
+				.respond(HttpResponse.response().withStatusCode(200).withBody(
+				"{\"code\":0,\"message\":\"ok\",\"data\":{\"messages\": [ \"hi from user1\",\"hi from user2\",\"bye from user1\"]}}"));
+		
+			response = client.getChatHistory(padID);
+			List chatHistory = (List) response.get("messages");
+			assertEquals(3, chatHistory.size());
+
+			mockServer.clear(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHistory"));
+	
+			mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHistory"))
+				.respond(HttpResponse.response().withStatusCode(200).withBody(
+				"{\"code\":0,\"message\":\"ok\",\"data\":{\"messages\": [ {\"text\":\"hi from user1\"},{\"text\":\"hi from user2\"}]}}"));
+	
+			response = client.getChatHistory(padID, 0, 1);
+			chatHistory = (List) response.get("messages");
+			assertEquals(2, chatHistory.size());
+			assertEquals("hi from user2", ((Map) chatHistory.get(1)).get("text"));
+		} finally {
+	
+			mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/deletePad"))
+				.respond(HttpResponse.response().withStatusCode(200)
+				.withBody("{\"code\":0,\"message\":\"ok\",\"data\":null}"));
+			
+			client.deletePad(padID);
+		}
+
+     }
 }
