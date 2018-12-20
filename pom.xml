@@ -83,6 +83,11 @@
       <artifactId>junit-quickcheck-generators</artifactId>
       <version>0.8.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.jetm</groupId>
+      <artifactId>jetm-maven-plugin</artifactId>
+      <version>1.0.2</version>
+    </dependency>
   </dependencies>
 
 
